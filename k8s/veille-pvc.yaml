@@ -1,0 +1,14 @@
+# Rakuten veille — PersistentVolumeClaim (SQLite posts.db).
+# One distinct PVC per namespace (staging / prod), like the rest of the site.
+# RWO is fine: single-node cluster, CronJob + Deployment share the same node.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rakuten-veille-data
+spec:
+  storageClassName: csi-cinder-high-speed-gen2
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

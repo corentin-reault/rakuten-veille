@@ -1,0 +1,22 @@
+# PROD ingress — publicly accessible (no auth), Pomerium ingress controller.
+# Apply in the `prod` namespace.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: veille-dashboard
+  namespace: prod
+  annotations:
+    ingress.pomerium.io/allow_public_unauthenticated_access: 'true'
+spec:
+  ingressClassName: pomerium
+  rules:
+    - host: 'rakuten-veille.reault.tech'
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: veille-dashboard
+                port:
+                  name: http

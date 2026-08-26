@@ -1,0 +1,22 @@
+# STAGING ingress — publicly accessible (no auth), Pomerium ingress controller.
+# Apply in the `staging` namespace.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: veille-dashboard
+  namespace: staging
+  annotations:
+    ingress.pomerium.io/allow_public_unauthenticated_access: 'true'
+spec:
+  ingressClassName: pomerium
+  rules:
+    - host: 'rakuten-veille.staging.reault.tech'
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: veille-dashboard
+                port:
+                  name: http

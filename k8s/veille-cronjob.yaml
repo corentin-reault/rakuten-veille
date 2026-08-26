@@ -1,0 +1,42 @@
+# Rakuten veille — daily collector (CronJob). Runs the full fetch+store into
+# the shared SQLite on the same PVC the dashboard reads. APIFY_TOKEN from a
+# K8s Secret (never committed). Pure-stdlib python image.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: veille-collector
+  labels:
+    app: veille-collector
+spec:
+  schedule: "0 6 * * 1"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 1200
+      template:
+        spec:
+          restartPolicy: OnFailure
+          imagePullSecrets:
+          - name: regcred
+          containers:
+          - name: collector
+            image: git.reault.tech/forgejo_admin/rakuten-veille:build-0-0000000
+            command: ["python3", "src/collect.py"]
+            env:
+            - name: DB_PATH
+              value: /data/posts.db
+            - name: APIFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: veille-secrets
+                  key: APIFY_TOKEN
+            volumeMounts:
+            - name: data
+              mountPath: /data
+          volumes:
+          - name: data
+            persistentVolumeClaim:
+              claimName: rakuten-veille-data

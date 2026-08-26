@@ -1,0 +1,50 @@
+# Rakuten veille — dashboard web server (reads shared SQLite on the PVC).
+# Ingress host (staging vs prod) set by the route; image tag via kubectl set image.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: veille-dashboard
+  labels:
+    app: veille-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: veille-dashboard
+  template:
+    metadata:
+      labels:
+        app: veille-dashboard
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: veille
+        image: git.reault.tech/forgejo_admin/rakuten-veille:build-0-0000000
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: DB_PATH
+          value: /data/posts.db
+        - name: PORT
+          value: "8080"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: rakuten-veille-data

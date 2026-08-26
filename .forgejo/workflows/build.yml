@@ -1,0 +1,38 @@
+name: build
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+jobs:
+  build:
+    runs-on: docker
+    container:
+      image: catthehacker/ubuntu:act-20.04
+    steps:
+      - name: Checkout
+        uses: https://code.forgejo.org/actions/checkout@v4
+      - name: Write registry auth
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+        run: |
+          set -e
+          mkdir -p "${GITHUB_WORKSPACE}/.docker"
+          AUTH=$(printf '%s:%s' "$REGISTRY_USER" "$REGISTRY_TOKEN" | base64 -w0)
+          echo "{\"auths\":{\"git.reault.tech\":{\"auth\":\"${AUTH}\"}}}" > "${GITHUB_WORKSPACE}/.docker/config.json"
+      - name: Determine image tag
+        id: vars
+        run: |
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          RUN_TAG="build-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          echo "tag=${RUN_TAG}" >> "${GITHUB_OUTPUT}"
+      - name: Build and push with Kaniko
+        uses: docker://gcr.io/kaniko-project/executor:latest
+        env:
+          DOCKER_CONFIG: ${{ github.workspace }}/.docker
+        with:
+          args: >-
+            --context=${{ github.workspace }}
+            --destination=git.reault.tech/forgejo_admin/rakuten-veille:${{ steps.vars.outputs.tag }}
+            --skip-tls-verify

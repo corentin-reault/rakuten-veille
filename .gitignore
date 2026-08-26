@@ -1,0 +1,12 @@
+# never commit secrets or local test artifacts
+secrets/
+*.secret.yaml
+secret.yaml
+secret-prod.yaml
+secret-staging.yaml
+.env
+.apify_token
+test_posts.db
+tests/inline.js
+*.pyc
+__pycache__/secret-*.generated.yaml
